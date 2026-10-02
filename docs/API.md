@@ -1,37 +1,30 @@
-# API de ADR4agents
+# ADR4agents API
 
-Base: `/api/v1`. Las peticiones con cuerpo usan `Content-Type: application/json`. Todas las operaciones están abiertas, sin autenticación ni cuentas. `author` es texto informativo y no identifica una sesión.
+Base: `/api/v1`. Requests with a body use `Content-Type: application/json`. No credentials or tokens are required.
 
-## Modelo de decisión
+See [AGENTS.md](../AGENTS.md) for general ADR rules and statuses. This document describes the HTTP contract.
+
+## Decision payloads
 
 ```json
-{
-  "project": "demo",
-  "author": "Agent1",
-  "title": "Elegir SQLite",
-  "context": "Aplicación pequeña con un único servidor",
-  "alternatives": "PostgreSQL requiere un servicio adicional",
-  "decision": "Utilizar SQLite",
-  "tags": "database,python",
-  "date": "2026-10-02"
-}
+{"project":"demo","author":"Agent1","title":"Choose SQLite","context":"Small application","alternatives":"PostgreSQL","decision":"Use SQLite","tags":"database,python","date":"2026-10-02"}
 ```
 
-`project` corresponde a un proyecto existente y no admite espacios. `author` admite letras y números, sin espacios ni guiones. Las etiquetas se reciben y devuelven como una cadena separada por comas; se eliminan duplicados y se ordenan. Cada etiqueta es una palabra sin espacios y puede contener guiones. Una cadena vacía representa ausencia de etiquetas.
+`project` must name an existing project and contain no spaces. `author` accepts letters and numbers without spaces or hyphens. Tags are comma-separated, deduplicated and sorted; each tag is a word without spaces and may contain hyphens. An empty string means no tags.
 
-`date` acepta fechas válidas en formato `YYYY-MM-DD`. Si se omite al crear, se utiliza la fecha local del servidor. Los campos de texto se recortan en sus extremos. Una propuesta requiere proyecto, autor, título, contexto, alternativas y decisión; etiquetas y fecha pueden omitirse.
+`date` accepts valid dates in `YYYY-MM-DD` format and defaults to the server's local date on creation. Text fields are trimmed. Proposals require `project`, `author`, `title`, `context`, `alternatives`, and `decision`; `tags` and `date` are optional.
 
-Las respuestas añaden `id`, `status` y `superseded_by`. Los estados son `draft`, `proposed`, `accepted`, `rejected` y `superseded`. `superseded_by` es `null` mientras no exista una sustitución efectiva.
+Responses add `id`, `status`, and `superseded_by`. Status values are `draft`, `proposed`, `accepted`, `rejected`, and `superseded`. `superseded_by` is `null` until a replacement becomes effective.
 
-Límites: 128 caracteres para proyecto, autor y cada etiqueta; 300 para título; 100 000 para cada texto extenso; 4096 para la cadena de etiquetas; 1 MiB por cuerpo JSON.
+Limits: 128 characters for project, author, and each tag; 300 for title; 100,000 for each long text field; 4096 for the tags string; 1 MiB per JSON body.
 
 ## Endpoints
 
-Todas las rutas siguientes se añaden a `/api/v1`. Los identificadores de las rutas son números enteros positivos.
+Append these routes to `/api/v1`. Route identifiers are positive integers.
 
-| Método | Ruta | Operación |
+| Method | Route | Operation |
 | --- | --- | --- |
-| GET | `/health` | Comprobar el servicio y el acceso a SQLite. |
+| GET | `/health` | Check service and database availability. |
 | GET | `/projects` | `list_projects` |
 | GET | `/projects/{id}` | `get_project` |
 | POST | `/projects` | `create_project` |
@@ -40,8 +33,8 @@ Todas las rutas siguientes se añaden a `/api/v1`. Los identificadores de las ru
 | GET | `/decisions/search` | `search_decisions` |
 | GET | `/decisions/current` | `get_current_decisions` |
 | GET | `/decisions/{id}` | `get_decision` |
-| POST | `/decisions` | `create_decision`: crea `proposed`. |
-| POST | `/decisions/drafts` | `create_decision_draft`: crea `draft`. |
+| POST | `/decisions` | `create_decision`: creates `proposed`. |
+| POST | `/decisions/drafts` | `create_decision_draft`: creates `draft`. |
 | PATCH | `/decisions/{id}` | `update_decision` |
 | PATCH | `/decisions/{id}/draft` | `update_decision_draft` |
 | POST | `/decisions/{id}/review` | `request_decision_review` |
@@ -50,97 +43,81 @@ Todas las rutas siguientes se añaden a `/api/v1`. Los identificadores de las ru
 | POST | `/decisions/{id}/supersede` | `supersede_decision` |
 | POST | `/decisions/{id}/replacement` | `propose_decision_replacement` |
 | GET | `/decisions/{id}/relations` | `get_decision_relations` |
-| GET | `/relations/{id}` | Consultar una relación. |
+| GET | `/relations/{id}` | Retrieve a relation. |
 | POST | `/relations` | `create_relation` |
 | PATCH | `/relations/{id}` | `update_relation` |
-| GET | `/decisions/{id}/comments` | Consultar comentarios. |
+| GET | `/decisions/{id}/comments` | Retrieve comments. |
 | POST | `/decisions/{id}/comments` | `comment_decision` |
 | GET | `/tags` | `list_tags` |
 
-## Proyectos y edición
+## Projects and partial updates
 
-Crear un proyecto con `{"name":"demo","description":"Descripción","context":"Contexto"}`. Solo `name` es obligatorio y debe ser una palabra sin espacios. `description` y `context` son textos libres, vacíos por defecto. Los nombres de proyecto son únicos y distinguen mayúsculas. Renombrar un proyecto conserva sus decisiones y relaciones.
+Create a project with `{"name":"demo","description":"Description","context":"Context"}`. Only `name` is required and must be a word without spaces. `description` and `context` default to empty strings. Names are unique and case-sensitive.
 
-Los endpoints PATCH aceptan los campos que se quieran modificar, con al menos uno presente. Los campos omitidos se conservan. El estado y el sucesor no pueden editarse directamente: cambian mediante las operaciones específicas. Editar un ADR aceptado conserva `accepted`.
+PATCH requires at least one field and preserves omitted fields. Status and successor cannot be edited directly; use their dedicated endpoints.
 
-## Borradores y estados
+## Draft and status requests
 
-Un borrador solo requiere `project`, `author` y `title`. Los textos `context`, `alternatives` y `decision` pueden omitirse o estar vacíos. Para enviarlo a revisión deben estar completos.
+Draft payloads require only `project`, `author`, and `title`. `context`, `alternatives`, and `decision` may be omitted or empty, but must be complete for `/review`.
 
-Las operaciones `/review`, `/approve` y `/reject` reciben un cuerpo JSON vacío `{}`:
+`/review`, `/approve`, and `/reject` receive `{}`. Invalid status transitions return `409`; incomplete text fields on review return `400`.
 
-```text
-draft → review → proposed → approve → accepted
-                         → reject → rejected
-```
+## Relation and replacement requests
 
-Las transiciones desde un estado incorrecto devuelven `409`. Los campos de texto incompletos impiden solicitar revisión con `400`.
+Create a relation with `{"source_id":2,"target_id":1,"type":"complements"}`. Decisions must be distinct and belong to the same project. Types are `complements`, `contradicts`, and `supersedes`. The source complements, contradicts, or supersedes the target.
 
-## Relaciones y sustituciones
+Responses contain `id`, `source_id`, `target_id`, `type`, and `effective`. Complement and contradiction relations are immediately effective. Collections include incoming and outgoing relations and support pagination.
 
-Crear una relación con `{"source_id":2,"target_id":1,"type":"complements"}`. Las decisiones deben pertenecer al mismo proyecto y ser distintas. Los tipos admitidos son `complements`, `contradicts` y `supersedes`. La dirección es del origen al destino: el origen complementa, contradice o sustituye al destino.
+`POST /decisions/{original_id}/replacement` accepts draft fields, with `author` and `title` required. The project is taken from the original. It creates a successor draft and a `supersedes` relation with `effective:false`; the original remains `accepted`.
 
-Una relación devuelve `id`, `source_id`, `target_id`, `type` y `effective`. Las relaciones de complemento y contradicción son efectivas inmediatamente. Su listado incluye tanto las entrantes como las salientes y admite paginación.
+`POST /decisions/{original_id}/supersede` receives `{"successor_id":2}` and requires both ADRs to be `accepted`. The original's response includes `status:"superseded"` and `superseded_by:2`; the relation becomes `effective:true`.
 
-`POST /decisions/{original_id}/replacement` recibe los campos de un borrador, con `author` y `title` obligatorios. El proyecto se toma del ADR original. Crea un borrador sucesor y una relación `supersedes` con `effective:false`; el original conserva `accepted`.
+POST `/relations` with type `supersedes`, or PATCH converting another type to `supersedes`, also activates replacement and requires both ADRs accepted. An existing replacement proposal is activated without duplicating its relation.
 
-Tras completar, revisar y aprobar el sucesor, `POST /decisions/{original_id}/supersede` con `{"successor_id":2}` hace efectiva la sustitución. Ambos ADR deben estar en `accepted`. El original pasa a `superseded`, su `superseded_by` referencia al sucesor y la relación queda con `effective:true`. El sucesor conserva `accepted`.
+PATCH rejects reassigning an effective supersession relation or changing its type. It also rejects moving a related ADR to another project.
 
-Crear una relación `supersedes` directamente también hace efectiva la sustitución y exige ambos ADR aceptados. Una propuesta de sustitución existente se activa sin duplicar la relación. Editar una relación de complemento o contradicción a `supersedes` también hace efectiva la sustitución.
+## Queries and pagination
 
-Las relaciones de sustitución ya efectivas no pueden reasignarse o convertirse a otro tipo: invalidaría el estado y el sucesor del ADR original. Un ADR relacionado no puede trasladarse a otro proyecto. Todas las escrituras de una sustitución se confirman o revierten conjuntamente.
-
-## Consultas y paginación
-
-Las colecciones aceptan `page` y `page_size`. Valores predeterminados: página 1 y 20 elementos; máximo 100 elementos por página. Se ordenan por identificador ascendente; las etiquetas, por texto.
+Collections accept `page` and `page_size`, defaulting to page 1 and 20 items, with a maximum page size of 100. Results are ordered by ascending identifier; tags are ordered by text.
 
 ```json
-{
-  "items": [],
-  "pagination": {"page": 1, "page_size": 20, "total": 0, "pages": 0}
-}
+{"items":[],"pagination":{"page":1,"page_size":20,"total":0,"pages":0}}
 ```
 
-Filtros de decisiones:
+Decision filters:
 
-- `project`, `author` y `status`: coincidencia exacta.
-- `tags`: cadena separada por comas; deben coincidir todas las etiquetas indicadas.
-- `date_from` y `date_to`: intervalo inclusivo en formato `YYYY-MM-DD`.
-- `q`: búsqueda de texto en título, contexto, alternativas y decisión.
+- `project`, `author`, and `status`: exact match.
+- `tags`: comma-separated string; all specified tags must match.
+- `date_from` and `date_to`: inclusive interval in `YYYY-MM-DD` format.
+- `q`: search in title, context, alternatives, and decision.
 
-`/decisions/search` exige `q`. `/decisions/current` devuelve solo `accepted` y acepta los demás filtros. La búsqueda no distingue mayúsculas, incluidos caracteres Unicode, y trata `%`, `_` y comillas como caracteres literales, no como SQL.
+`/decisions/search` requires `q`. `/decisions/current` returns only `accepted` and accepts the other filters. Search is case-insensitive, including Unicode, and treats `%`, `_`, and quotes as literal characters.
 
-`/projects` acepta `q` para buscar en nombres; `/tags` acepta `project`. Los filtros pueden combinarse con la paginación. Los parámetros desconocidos, repetidos o inválidos se rechazan.
+`/projects` accepts `q` to search names; `/tags` accepts `project`. Filters can be combined with pagination. Unknown, repeated, or invalid parameters are rejected.
 
-## Comentarios
+## Comments
 
-Crear un comentario con `{"author":"Agent1","text":"Observación","date":"2026-10-02"}`. `author` y `text` son obligatorios; la fecha se calcula si se omite. Los comentarios no alteran el contenido ni el estado del ADR. El listado de comentarios admite paginación.
+Create a comment with `{"author":"Agent1","text":"Observation","date":"2026-10-02"}`. `author` and `text` are required; the date defaults automatically. Collections support pagination.
 
-## Errores y respuestas
+## Errors and responses
 
-- `200`: consulta, edición o transición correcta.
-- `201`: recurso creado; la cabecera `Location` indica su ubicación o colección.
-- `400`: datos, campos, filtros o cuerpo JSON inválidos.
-- `404`: recurso o ruta inexistente.
-- `405`: método no permitido.
-- `409`: nombre duplicado, relación duplicada o conflicto de estado.
-- `413`: cuerpo demasiado grande.
-- `415`: cuerpo sin tipo de contenido JSON.
-- `503`: SQLite está ocupado; la operación puede reintentarse.
+- `200`: successful query, update, or transition.
+- `201`: resource created; `Location` identifies its location or collection.
+- `400`: invalid data, fields, filters, or JSON body.
+- `404`: resource or route not found.
+- `405`: method not allowed.
+- `409`: duplicate name, duplicate relation, or status conflict.
+- `413`: body too large.
+- `415`: body without a JSON content type.
+- `503`: SQLite is busy; the operation can be retried.
 
 ```json
-{
-  "error": {
-    "code": "validation_error",
-    "message": "Must contain only letters and numbers.",
-    "field": "author"
-  }
-}
+{"error":{"code":"validation_error","message":"Must contain only letters and numbers.","field":"author"}}
 ```
 
-Los errores de la aplicación son JSON. `field` aparece cuando corresponde a un campo concreto. Los campos desconocidos se rechazan, y las operaciones que requieren varias escrituras se ejecutan dentro de una transacción. Waitress puede rechazar peticiones HTTP antes de llegar a Flask, como un cuerpo superior a 1 MiB; esas respuestas de transporte pueden tener otro formato.
+Application errors use JSON. `field` appears for errors associated with a specific field. Unknown fields are rejected. Waitress may reject requests before they reach Flask, including bodies exceeding 1 MiB; transport responses may use a different format.
 
-## Ejemplo con PowerShell
+## PowerShell example
 
 ```powershell
 $api = 'http://127.0.0.1:5000/api/v1'
