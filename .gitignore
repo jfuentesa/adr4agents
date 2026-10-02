@@ -1,0 +1,60 @@
+# Bytecode y cachés de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Compilación y distribución
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+
+# Pruebas, cobertura y herramientas de análisis
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+
+# Variables de entorno y configuración local
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Datos locales de Flask y SQLite
+/instance/
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Registros y notebooks
+*.log
+.ipynb_checkpoints/
+
+# Archivos temporales de editores y del sistema operativo
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini

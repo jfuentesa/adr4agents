@@ -1,0 +1,21 @@
+{% from 'macros.html' import icon, badge with context %}
+<div class="preview-heading">
+<span class="muted">ADR-{{ '%03d'|format(item.id) }}</span>{{ badge(item.status) }}</div>
+<h2>{{ item.title }}</h2>
+<div class="metadata">
+<span>{{ item.project }} · {{ item.author }}</span>
+<span>{{ item.date }}</span>
+</div>
+{% if item.superseded_by %}<p class="notice">Replaced by <a href="{{ url_for('web.decision_detail', decision_id=item.superseded_by) }}">ADR-{{ '%03d'|format(item.superseded_by) }}</a>.</p>{% endif %}
+<div class="decision-sections">
+{% for key, label, symbol in [('context','Context','document'),('alternatives','Alternatives','folder'),('decision','Decision','check')] %}
+<section>
+<h3>{{ icon(symbol) }} {{ label }}</h3>
+<p class="prose">{{ item[key] or 'Not written yet.' }}</p>
+</section>
+{% endfor %}
+<section>
+<h3>{{ icon('layers') }} Tags</h3>
+<div class="tags">{% for tag in item.tags.split(',') if tag %}<a class="tag" href="{{ url_for('web.decision_list', project=item.project, tags=tag) }}">{{ tag }}</a>{% else %}<span class="muted">No tags</span>{% endfor %}</div>
+</section>
+</div>

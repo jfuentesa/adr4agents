@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, pagination with context %}
+{% block title %}Projects{% endblock %}
+{% block content %}<div class="page-heading">
+<div>
+<p class="eyebrow">WORKSPACE</p>
+<h1>Projects</h1>
+<p class="muted">Give every decision a home and a shared context.</p>
+</div>
+<a class="button primary" href="{{ url_for('web.project_form') }}">{{ icon('plus') }} New project</a>
+</div>
+<section class="card">
+<form method="get" class="project-search">
+<label class="sr-only" for="project-q">Search projects</label>
+<input id="project-q" name="q" type="search" placeholder="Search project names…" value="{{ query }}" maxlength="500">
+<button class="button">Search</button>{% if query %}<a href="{{ url_for('web.project_list') }}">Clear</a>{% endif %}</form>
+{% for project in items %}<article class="project-row">
+<span class="stat-icon total">{{ icon('folder',24) }}</span>
+<div>
+<h2>
+<a href="{{ url_for('web.decision_list',project=project.name) }}">{{ project.name }}</a>
+</h2>
+<p class="prose">{{ project.description or 'No description yet.' }}</p>{% if project.context %}<details>
+<summary>Project context</summary>
+<p class="prose">{{ project.context }}</p>
+</details>{% endif %}</div>
+<a class="button small" href="{{ url_for('web.project_form',project_id=project.id) }}">{{ icon('edit',16) }} Edit</a>
+</article>{% else %}<div class="empty-state">{{ icon('folder',40) }}<h3>No projects found</h3>
+<p>Create a project to start documenting decisions.</p>
+</div>{% endfor %}{{ pagination(paging) }}</section>{% endblock %}

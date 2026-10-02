@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import icon, badge, pagination with context %}
+{% block content %}
+<div class="page-heading">
+<div>
+<p class="eyebrow">YOUR DECISION WORKSPACE</p>
+<h1>Architecture decisions</h1>
+<p class="muted">A clear view of the choices shaping your projects.</p>
+</div>
+<a class="button" href="{{ url_for('web.project_form') }}">{{ icon('folder') }} New project</a>
+</div>
+<div class="stats">
+  <a class="stat-card" href="{{ page_link(status='', page=1, selected='') }}">
+<span class="stat-icon total">{{ icon('document',24) }}</span>
+<div>
+<span>Total ADRs</span>
+<strong>{{ counts.values()|sum }}</strong>
+<small>Matching your filters</small>
+</div>
+</a>
+  {% for status, symbol in [('accepted','check'),('proposed','clock'),('draft','document'),('rejected','ban'),('superseded','arrow')] %}
+  <a class="stat-card" href="{{ page_link(status=status, page=1, selected='') }}">
+<span class="stat-icon {{ status }}">{{ icon(symbol,24) }}</span>
+<div>
+<span>{{ status|capitalize }}</span>
+<strong>{{ counts.get(status,0) }}</strong>
+<small>{{ 'Currently applicable' if status == 'accepted' else 'Decisions' }}</small>
+</div>
+</a>
+  {% endfor %}
+</div>
+<form method="get" class="card filters" aria-label="Decision filters">
+  <div class="filter-grid">
+    <div class="field">
+<label for="project">Project</label>
+<select id="project" name="project">
+<option value="">All projects</option>{% for project in projects %}<option value="{{ project.name }}" {% if filters.get('project') == project.name %}selected{% endif %}>{{ project.name }}</option>{% endfor %}</select>
+</div>
+    <div class="field">
+<label for="status">Status</label>
+<select id="status" name="status">
+<option value="">All statuses</option>{% for status in states %}<option value="{{ status }}" {% if filters.get('status') == status %}selected{% endif %}>{{ status|capitalize }}</option>{% endfor %}</select>
+</div>
+    <div class="field">
+<label for="author">Author</label>
+<input id="author" name="author" value="{{ filters.get('author','') }}" maxlength="128" placeholder="Author label">
+</div>
+    <div class="field">
+<label for="tags">Tags</label>
+<input id="tags" name="tags" value="{{ filters.get('tags','') }}" maxlength="4096" placeholder="storage,python">
+</div>
+    <div class="field">
+<label for="date_from">From date</label>
+<input id="date_from" name="date_from" type="date" value="{{ filters.get('date_from','') }}">
+</div>
+    <div class="field">
+<label for="date_to">To date</label>
+<input id="date_to" name="date_to" type="date" value="{{ filters.get('date_to','') }}">
+</div>
+  </div>
+  <div class="filter-footer">
+<div class="inline-search">{{ icon('search') }}<label class="sr-only" for="filter-q">Search text</label>
+<input type="search" name="q" id="filter-q" value="{{ filters.get('q','') }}" placeholder="Search titles, context, alternatives or decisions" maxlength="500">
+</div>
+<button class="button primary" type="submit">Apply filters</button>
+<a class="text-link" href="{{ url_for('web.decision_list') }}">Clear</a>
+</div>
+</form>
+<div class="decision-grid">
+  <section class="card list-card">
+<div class="card-heading">
+<h2>Decision records <span class="count">{{ paging.total }}</span>
+</h2>
+<span class="muted small-text">Oldest first</span>
+</div>
+  {% if items %}<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title / project</th>
+<th>Status</th>
+<th>Author</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody>
+  {% for item in items %}<tr class="{% if selected and selected.id == item.id %}selected{% endif %}">
+<td>
+<a href="{{ page_link(selected=item.id) }}" aria-label="Preview ADR-{{ item.id }}">ADR-{{ '%03d'|format(item.id) }}</a>
+</td>
+<td>
+<a class="record-title" href="{{ url_for('web.decision_detail',decision_id=item.id) }}">{{ item.title }}</a>
+<small>{{ item.project }}</small>
+</td>
+<td>{{ badge(item.status) }}</td>
+<td>{{ item.author }}</td>
+<td class="nowrap">{{ item.date }}</td>
+</tr>{% endfor %}
+  </tbody>
+</table>
+</div>{{ pagination(paging) }}
+  {% else %}<div class="empty-state">{{ icon('document',40) }}<h3>No decisions found</h3>
+<p>{{ 'Try different filters or clear your search.' if filters else 'Create a project, then document your first decision.' }}</p>
+<a class="button primary" href="{{ url_for('web.decision_form') }}">Create a decision</a>
+</div>{% endif %}</section>
+  <aside class="card preview" aria-label="Selected decision preview">{% if selected %}{% with item=selected %}{% include 'decision_summary.html' %}{% endwith %}<a class="button primary full" href="{{ url_for('web.decision_detail',decision_id=selected.id) }}">Open full decision {{ icon('arrow') }}</a>{% else %}<div class="empty-state">
+<h3>Your decisions, in focus</h3>
+<p>A selected ADR will appear here.</p>
+</div>{% endif %}</aside>
+</div>
+{% endblock %}

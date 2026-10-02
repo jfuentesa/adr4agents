@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf, field, error_box with context %}
+{% block title %}{{ 'Edit project' if current else 'New project' }}{% endblock %}
+{% block content %}<div class="page-heading">
+<div>
+<p class="eyebrow">PROJECT</p>
+<h1>{{ 'Edit project' if current else 'New project' }}</h1>
+<p class="muted">Capture the context your decisions share.</p>
+</div>
+</div>
+<section class="card form-card">{{ error_box(error) }}<form method="post">{{ csrf() }}{{ field('name','Project name',data,error,required=True,maxlength=128,hint='One word without spaces. Renaming preserves existing decisions.') }}{{ field('description','Description',data,error,textarea=True) }}{{ field('context','Context',data,error,textarea=True) }}<div class="form-actions">
+<button class="button primary">{{ 'Save changes' if current else 'Create project' }}</button>
+<a class="button" href="{{ url_for('web.project_list') }}">Cancel</a>
+</div>
+</form>
+</section>{% endblock %}

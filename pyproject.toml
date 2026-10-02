@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adr4agents"
+version = "0.1.0"
+description = "A lightweight API for architectural decisions."
+requires-python = ">=3.13"
+dependencies = ["Flask>=3.1,<4", "waitress>=3.0,<4", "mcp>=2.2,<3", "pydantic>=2.12,<3"]
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.setuptools.package-data]
+src = ["sql/*.sql", "templates/*.html", "static/css/*.css", "static/js/*.js"]

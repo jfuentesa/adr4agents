@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf, error_box with context %}
+{% block title %}{{ 'Edit relation' if current else 'New relation' }}{% endblock %}
+{% block content %}<div class="page-heading">
+<div>
+<p class="eyebrow">{{ item.project }}</p>
+<h1>{{ 'Edit relation' if current else 'New relation' }}</h1>
+<p class="muted">Connect decisions within the same project.</p>
+</div>
+</div>
+<section class="card form-card">{{ error_box(error) }}<form method="post" data-relation-form>{{ csrf() }}
+{% for name, label in [('source_id','Source decision'),('target_id','Target decision')] %}<div class="field">
+<label for="{{ name }}">{{ label }} <span class="required">*</span>
+</label>
+<select id="{{ name }}" name="{{ name }}" required {% if error and error.field == name %}aria-invalid="true"{% endif %}>
+<option value="">Choose a decision</option>{% for choice in choices %}<option value="{{ choice.id }}" {% if data.get(name)|string == choice.id|string %}selected{% endif %}>ADR-{{ choice.id }} · {{ choice.title }} ({{ choice.status }})</option>{% endfor %}</select>{% if error and error.field == name %}<small class="field-error">{{ error.message }}</small>{% endif %}</div>{% endfor %}
+<div class="field">
+<label for="type">Relation type</label>
+<select id="type" name="type">{% for value in ['complements','contradicts','supersedes'] %}<option value="{{ value }}" {% if data.get('type') == value %}selected{% endif %}>{{ value|capitalize }}</option>{% endfor %}</select>
+</div>
+<p class="notice">Direction: source → target. A new “supersedes” relation makes the source replace the target immediately; both must be accepted. Editing a planned replacement preserves its planned effect.</p>
+<div class="form-actions">
+<button class="button primary">{{ 'Save relation' if current else 'Create relation' }}</button>
+<a class="button" href="{{ url_for('web.decision_detail',decision_id=item.id) }}">Cancel</a>
+</div>
+</form>
+</section>{% endblock %}

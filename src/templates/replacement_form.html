@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf, error_box with context %}
+{% block title %}Propose replacement{% endblock %}
+{% block content %}<div class="page-heading">
+<div>
+<p class="eyebrow">{{ item.project }}</p>
+<h1>Propose a replacement</h1>
+<p class="muted">For ADR-{{ '%03d'|format(item.id) }} · {{ item.title }}</p>
+</div>
+</div>
+<section class="card form-card">
+<p class="notice">Creates a linked draft in the same project. The original stays accepted until an accepted successor explicitly replaces it.</p>{{ error_box(error) }}
+<form method="post">{{ csrf() }}{% include 'decision_fields.html' %}<div class="form-actions">
+<button class="button primary" type="submit">Create replacement draft</button>
+<a class="button" href="{{ url_for('web.decision_detail',decision_id=item.id) }}">Cancel</a>
+</div>
+</form>
+</section>{% endblock %}

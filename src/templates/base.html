@@ -1,0 +1,40 @@
+{% from 'macros.html' import icon with context %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Decisions{% endblock %} · ADR4agents</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <script src="{{ url_for('static', filename='js/web.js') }}" defer>
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<aside class="sidebar">
+  <a href="{{ url_for('web.decision_list') }}" class="brand">{{ icon('layers', 32) }}<span>ADR4agents</span>
+</a>
+  <div class="nav-label">WORKSPACE</div>
+  <nav aria-label="Main navigation">
+    <a href="{{ url_for('web.decision_list') }}" class="nav-link {% if request.endpoint not in ['web.project_list','web.project_form'] %}active{% endif %}">{{ icon('document') }} Decisions</a>
+    <a href="{{ url_for('web.project_list') }}" class="nav-link {% if request.endpoint in ['web.project_list','web.project_form'] %}active{% endif %}">{{ icon('folder') }} Projects</a>
+    <a href="{{ url_for('web.decision_form') }}" class="nav-link">{{ icon('plus') }} New decision</a>
+  </nav>
+  <div class="sidebar-note">Good decisions deserve<br>clear documentation.<span>Architecture, made explicit.</span>
+</div>
+</aside>
+<div class="workspace">
+  <header class="topbar">
+    <form action="{{ url_for('web.decision_list') }}" method="get" class="global-search" role="search">
+      {{ icon('search') }}<label class="sr-only" for="global-search">Search decision text</label>
+      <input id="global-search" type="search" name="q" maxlength="500" placeholder="Search decisions or keywords…" value="{{ request.args.get('q', '') if request.endpoint == 'web.decision_list' else '' }}">
+      <button class="search-submit" type="submit">Search</button>
+    </form>
+    <a class="button primary" href="{{ url_for('web.decision_form') }}">{{ icon('plus') }}<span>New ADR</span>
+</a>
+  </header>
+  <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
+</div>
+</body>
+</html>

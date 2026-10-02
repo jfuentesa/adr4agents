@@ -1,0 +1,15 @@
+{% from 'macros.html' import field with context %}
+<div class="form-grid">
+{% if projects is defined %}<div class="field">
+<label for="project">Project <span class="required">*</span>
+</label>
+<select name="project" id="project" required {% if error and error.field == 'project' %}aria-invalid="true"{% endif %}>
+<option value="">Choose a project</option>{% for project in projects %}<option value="{{ project.name }}" {% if data.get('project') == project.name %}selected{% endif %}>{{ project.name }}</option>{% endfor %}</select>{% if error and error.field == 'project' %}<small class="field-error">{{ error.message }}</small>{% endif %}</div>{% endif %}
+{{ field('author','Author',data,error,required=True,hint='One word, letters and numbers. An author label, not an account.',maxlength=128) }}
+{{ field('date','Date',data,error,type='date',hint='Leave blank to use today on creation. On editing, blank keeps the current date.',maxlength=10) }}
+</div>
+{{ field('title','Title',data,error,required=True,maxlength=300) }}
+{{ field('context','Context',data,error,textarea=True,hint='Describe the problem and constraints.') }}
+{{ field('alternatives','Alternatives',data,error,textarea=True,hint='Describe the options considered as free text.') }}
+{{ field('decision','Decision',data,error,textarea=True,hint='Explain the chosen approach and why.') }}
+{{ field('tags','Tags',data,error,hint='Comma-separated words without spaces, for example storage,python.',maxlength=4096) }}

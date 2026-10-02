@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% from 'macros.html' import csrf, error_box with context %}
+{% block title %}{{ 'Edit decision' if current else 'New decision' }}{% endblock %}
+{% block content %}
+<div class="page-heading">
+<div>
+<p class="eyebrow">DECISION RECORD</p>
+<h1>{{ 'Edit decision' if current else 'New decision' }}</h1>
+<p class="muted">{{ 'Editing keeps the current status: ' + current.status + '.' if current else 'Start a draft or submit a complete proposal.' }}</p>
+</div>
+</div>
+<section class="card form-card">
+{% if not projects %}<p class="notice">Create a project before adding a decision. <a href="{{ url_for('web.project_form') }}">New project</a>
+</p>{% endif %}
+{{ error_box(error) }}<form method="post">{{ csrf() }}{% include 'decision_fields.html' %}
+{% if not current %}<div class="field">
+<label for="mode">Create as</label>
+<select id="mode" name="mode">
+<option value="draft" {% if data.get('status') == 'draft' %}selected{% endif %}>Draft</option>
+<option value="proposed" {% if data.get('status') == 'proposed' %}selected{% endif %}>Proposed</option>
+</select>
+<small>Proposals require context, alternatives and decision. Drafts can leave these empty.</small>
+</div>{% endif %}
+<div class="form-actions">
+<button class="button primary" type="submit" {% if not projects %}disabled{% endif %}>{{ 'Save changes' if current else 'Create decision' }}</button>
+<a class="button" href="{{ url_for('web.decision_detail',decision_id=current.id) if current else url_for('web.decision_list') }}">Cancel</a>
+</div>
+</form>
+</section>{% endblock %}

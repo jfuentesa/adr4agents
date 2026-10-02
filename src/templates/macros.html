@@ -1,0 +1,45 @@
+{% macro icon(name, size=20) -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% if name == 'layers' %}<path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/>
+{% elif name == 'search' %}<circle cx="10.5" cy="10.5" r="6.5"/>
+<path d="m16 16 5 5"/>
+{% elif name == 'plus' %}<path d="M12 5v14M5 12h14"/>
+{% elif name == 'check' %}<circle cx="12" cy="12" r="9"/>
+<path d="m8 12 3 3 5-6"/>
+{% elif name == 'clock' %}<circle cx="12" cy="12" r="9"/>
+<path d="M12 7v5l3 2"/>
+{% elif name == 'folder' %}<path d="M3 7V5h7l2 3h9v12H3V7Z"/>
+{% elif name == 'edit' %}<path d="m15 4 5 5-11 11H4v-5L15 4ZM13 6l5 5"/>
+{% elif name == 'arrow' %}<path d="M4 12h16m-6-6 6 6-6 6"/>
+{% elif name == 'ban' %}<circle cx="12" cy="12" r="9"/>
+<path d="m6 6 12 12"/>
+{% else %}<path d="M6 3h8l4 4v14H6V3Zm8 0v5h4M9 12h6M9 16h6"/>{% endif %}
+</svg>
+{%- endmacro %}
+
+{% macro badge(status) -%}<span class="badge {{ status }}">{{ status|capitalize }}</span>{%- endmacro %}
+
+{% macro csrf() -%}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{%- endmacro %}
+
+{% macro field(name, label, data, error=None, type='text', required=False, hint='', textarea=False, maxlength=100000) %}
+<div class="field {% if error and error.field == name %}invalid{% endif %}">
+  <label for="{{ name }}">{{ label }}{% if required %}<span class="required"> *</span>{% endif %}</label>
+  {% if textarea %}<textarea id="{{ name }}" name="{{ name }}" rows="5" maxlength="{{ maxlength }}" {% if required %}required{% endif %} {% if error and error.field == name %}aria-invalid="true" aria-describedby="{{ name }}-error"{% elif hint %}aria-describedby="{{ name }}-hint"{% endif %}>{{ data.get(name, '') }}</textarea>
+  {% else %}<input id="{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ data.get(name, '') }}" maxlength="{{ maxlength }}" {% if required %}required{% endif %} {% if error and error.field == name %}aria-invalid="true" aria-describedby="{{ name }}-error"{% elif hint %}aria-describedby="{{ name }}-hint"{% endif %}>{% endif %}
+  {% if hint %}<small id="{{ name }}-hint">{{ hint }}</small>{% endif %}
+  {% if error and error.field == name %}<small class="field-error" id="{{ name }}-error">{{ error.message }}</small>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro error_box(error) %}{% if error %}<div class="alert" role="alert">{{ error.message }}</div>{% endif %}{% endmacro %}
+
+{% macro pagination(paging, parameter='page') %}
+{% if paging.total %}<div class="pagination">
+<span>Showing {{ paging.start }}–{{ paging.end }} of {{ paging.total }}</span>
+<nav aria-label="{{ parameter|replace('_',' ') }} navigation">
+{% if paging.page > 1 %}<a class="button small" href="{{ page_link(**{parameter: paging.page-1}) }}">Previous</a>{% endif %}
+<span>Page {{ paging.page }} of {{ paging.pages }}</span>
+{% if paging.page < paging.pages %}<a class="button small" href="{{ page_link(**{parameter: paging.page+1}) }}">Next</a>{% endif %}
+</nav>
+</div>{% endif %}
+{% endmacro %}
